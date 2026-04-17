@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html amp lang="en">
+<head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+  <meta charset="utf-8">
+  <title>Oppo Find X9 Ultra vs Samsung S26 Ultra: Which 200MP Camera Wins?</title>
+  <link rel="canonical" href="https://example.com/web-stories/oppo-vs-samsung-200mp">
+  <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+  
+  <script async src="https://cdn.ampproject.org/v0.js"></script>
+  <script async custom-element="amp-story" src="https://cdn.ampproject.org/v0/amp-story-1.0.js"></script>
+  <script async custom-element="amp-story-auto-ads" src="https://cdn.ampproject.org/v0/amp-story-auto-ads-0.1.js"></script>
+  
+  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
+
+  <style amp-custom>
+    amp-story {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', Roboto, Helvetica, Arial, sans-serif;
+      color: #fff;
+    }
+    .bg1 { background: linear-gradient(135deg, #0d9488 0%, #0891b2 30%, #7c3aed 70%, #9333ea 100%); width:100%; height:100%; }
+    .bg2 { background: linear-gradient(180deg, #020617 0%, #042f2e 50%, #0d9488 100%); width:100%; height:100%; }
+    .bg3 { background: linear-gradient(180deg, #020617 0%, #1e1b4b 50%, #4338ca 100%); width:100%; height:100%; }
+    .bg4 { background: radial-gradient(circle at top, #0f172a 0%, #020617 70%); width:100%; height:100%; }
+    .bg5 { background: linear-gradient(135deg, #020617 0%, #134e4a 40%, #312e81 100%); width:100%; height:100%; }
+
+    .center { align-content: center; text-align: center; padding: 0 64px; }
+    
+    .pill { display:inline-block; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); backdrop-filter:blur(12px); padding:16px 36px; border-radius:999px; font-size:26px; font-weight:700; letter-spacing:3px; text-transform:uppercase; margin-bottom:50px; }
+    h1.title { font-size:86px; font-weight:900; line-height:0.95; letter-spacing:-2px; margin:0; text-transform:uppercase; }
+    .vs { display:block; font-size:44px; font-weight:800; opacity:0.6; margin:28px 0; letter-spacing:8px; }
+    .ultra { font-size:134px; font-weight:900; line-height:0.9; margin:10px 0 0; background:linear-gradient(180deg, #ffffff 40%, rgba(255,255,255,0.5) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .subtitle { font-size:44px; font-weight:600; color:#cbd5e1; margin-top:70px; line-height:1.3; }
+    .mp-badge { width:300px; height:300px; border-radius:50%; border:10px solid rgba(255,255,255,0.15); margin:90px auto 0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(0,0,0,0.2); }
+    .mp-num { font-size:84px; font-weight:900; line-height:1; }
+    .mp-txt { font-size:28px; font-weight:700; letter-spacing:3px; opacity:0.7; margin-top:4px; }
+
+    .brand-top { font-size:32px; font-weight:800; letter-spacing:6px; opacity:0.7; margin-bottom:20px; text-transform: uppercase; }
+    .phone-name { font-size:74px; font-weight:900; line-height:1; margin:0 0 70px; }
+    .specs { display:flex; flex-direction:column; gap:28px; margin-top:20px; width:100%; }
+    .spec-card { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:32px; padding:36px; backdrop-filter:blur(20px); text-align:left; }
+    .spec-top { font-size:24px; font-weight:700; text-transform:uppercase; letter-spacing:2px; opacity:0.7; margin-bottom:10px; }
+    .spec-main { font-size:56px; font-weight:900; line-height:1.1; }
+    .spec-sub { font-size:30px; font-weight:500; color:#a5f3fc; margin-top:6px; }
+    .oppo-accent { color:#2dd4bf; }
+    .samsung-accent { color:#a5b4fc; }
+    .spec-sub.sam { color:#c7d2fe; }
+
+    .compare-head { text-align:center; margin-bottom:50px; }
+    .compare-title { font-size:68px; font-weight:900; text-transform:uppercase; line-height:1; }
+    .compare-sub { font-size:26px; opacity:0.7; margin-top:14px; letter-spacing:3px; font-weight:600; }
+    .table { display:flex; flex-direction:column; gap:22px; width:100%; }
+    .row { display:grid; grid-template-columns:1fr auto; align-items:center; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:24px; padding:34px 30px; }
+    .cat { font-size:38px; font-weight:800; letter-spacing:0.5px; text-align:left; }
+    .cat small { display:block; font-size:22px; font-weight:500; opacity:0.6; margin-top:6px; text-transform:uppercase; letter-spacing:1px; }
+    .badge { padding:14px 26px; border-radius:999px; font-size:24px; font-weight:800; letter-spacing:1px; }
+    .badge.oppo { background:linear-gradient(90deg, #0d9488, #14b8a6); color:#042f2e; }
+    .badge.sam { background:linear-gradient(90deg, #6366f1, #8b5cf6); color:#fff; }
+    .win { border-left:6px solid #14b8a6; }
+    .win.sam { border-left-color:#8b5cf6; }
+
+    .verdict-wrap { align-content:center; text-align:center; padding:0 70px; }
+    .verdict-eyebrow { font-size:28px; font-weight:700; letter-spacing:4px; opacity:0.7; margin-bottom:24px; text-transform:uppercase; }
+    .verdict-title { font-size:82px; font-weight:900; line-height:1.05; margin-bottom:30px; }
+    .verdict-text { font-size:34px; line-height:1.5; color:#cbd5e1; margin-bottom:50px; }
+    .highlight { color:#fff; font-weight:700; }
+    .split { display:flex; gap:18px; margin:40px 0 20px; width:100%; }
+    .split-box { flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:26px; padding:30px 20px; }
+    .split-box h3 { font-size:28px; margin:0 0 10px; font-weight:800; }
+    .split-box p { font-size:22px; margin:0; opacity:0.8; line-height:1.3; }
+    .cta-button { display:inline-block; background:#ffffff; color:#020617; font-size:32px; font-weight:800; padding:26px 52px; border-radius:999px; text-decoration:none; letter-spacing:0.5px; box-shadow:0 10px 30px rgba(0,0,0,0.35); }
+  </style>
+</head>
+<body>
+  <amp-story standalone
+    title="Oppo Find X9 Ultra vs Samsung S26 Ultra: Which 200MP Camera Wins?"
+    publisher="Camera Battle 2026"
+    publisher-logo-src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='100%25' height='100%25' fill='%23ffffff'/%3E%3C/svg%3E"
+    poster-portrait-src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1080' height='1920'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%230d9488'/%3E%3Cstop offset='100%25' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23g)'/%3E%3C/svg%3E"
+    poster-square-src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='640'%3E%3Crect width='100%25' height='100%25' fill='%230d9488'/%3E%3C/svg%3E"
+    poster-landscape-src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1280' height='720'%3E%3Crect width='100%25' height='100%25' fill='%230d9488'/%3E%3C/svg%3E">
+
+    <amp-story-auto-ads>
+      <script type="application/json">
+      {
+        "ad-attributes": {
+          "type": "adsense",
+          "data-ad-client": "ca-pub-0000000000000000",
+          "data-ad-slot": "0000000000"
+        }
+      }
+      </script>
+    </amp-story-auto-ads>
+
+    <!-- Slide 1: Cover -->
+    <amp-story-page id="cover">
+      <amp-story-grid-layer template="fill">
+        <div class="bg1"></div>
+      </amp-story-grid-layer>
+      <amp-story-grid-layer template="vertical" class="center">
+        <div class="pill" animate-in="fade-in" animate-in-duration="0.6s">2026 Camera Battle</div>
+        <h1 class="title" animate-in="fly-in-bottom" animate-in-delay="0.2s">OPPO FIND X9<span class="vs">VS</span>SAMSUNG S26</h1>
+        <div class="ultra" animate-in="fly-in-bottom" animate-in-delay="0.4s">ULTRA</div>
+        <div class="subtitle" animate-in="fade-in" animate-in-delay="0.7s">Which 200MP Camera Wins?</div>
+        <div class="mp-badge" animate-in="scale-up" animate-in-delay="1s">
+          <div class="mp-num">200MP</div>
+          <div class="mp-txt">DUEL</div>
+        </div>
+      </amp-story-grid-layer>
+    </amp-story-page>
+
+    <!-- Slide 2: OPPO -->
+    <amp-story-page id="oppo">
+      <amp-story-grid-layer template="fill">
+        <div class="bg2"></div>
+      </amp-story-grid-layer>
+      <amp-story-grid-layer template="vertical" class="center" style="align-content:start; padding-top:120px;">
+        <div class="brand-top" animate-in="fade-in">OPPO</div>
+        <h2 class="phone-name" animate-in="fly-in-top" animate-in-delay="0.1s">Find X9 Ultra</h2>
+        <div class="specs">
+          <div class="spec-card" animate-in="fly-in-left" animate-in-delay="0.3s">
+            <div class="spec-top">Camera System</div>
+            <div class="spec-main oppo-accent">DUAL 200MP</div>
+            <div class="spec-sub">1-inch Main + Periscope</div>
+          </div>
+          <div class="spec-card" animate-in="fly-in-left" animate-in-delay="0.5s">
+            <div class="spec-top">Zoom King</div>
+            <div class="spec-main oppo-accent">10x Optical</div>
+            <div class="spec-sub">Continuous lossless zoom</div>
+          </div>
+          <div class="spec-card" animate-in="fly-in-left" animate-in-delay="0.7s">
+            <div class="spec-top">Endurance</div>
+            <div class="spec-main oppo-accent">7050mAh</div>
+            <div class="spec-sub">Silicon-Carbon Battery</div>
+          </div>
+        </div>
+      </amp-story-grid-layer>
+    </amp-story-page>
+
+    <!-- Slide 3: SAMSUNG -->
+    <amp-story-page id="samsung">
+      <amp-story-grid-layer template="fill">
+        <div class="bg3"></div>
+      </amp-story-grid-layer>
+      <amp-story-grid-layer template="vertical" class="center" style="align-content:start; padding-top:120px;">
+        <div class="brand-top" animate-in="fade-in">SAMSUNG</div>
+        <h2 class="phone-name" animate-in="fly-in-top" animate-in-delay="0.1s">Galaxy S26 Ultra</h2>
+        <div class="specs">
+          <div class="spec-card" animate-in="fly-in-right" animate-in-delay="0.3s">
+            <div class="spec-top">Main Sensor</div>
+            <div class="spec-main samsung-accent">200MP f/1.4</div>
+            <div class="spec-sub sam">Brightest aperture ever</div>
+          </div>
+          <div class="spec-card" animate-in="fly-in-right" animate-in-delay="0.5s">
+            <div class="spec-top">Brain</div>
+            <div class="spec-main samsung-accent">Galaxy AI</div>
+            <div class="spec-sub sam">ProVisual Engine 3.0</div>
+          </div>
+          <div class="spec-card" animate-in="fly-in-right" animate-in-delay="0.7s">
+            <div class="spec-top">Zoom</div>
+            <div class="spec-main samsung-accent">5x Optical</div>
+            <div class="spec-sub sam">New 50MP telephoto</div>
+          </div>
+        </div>
+      </amp-story-grid-layer>
+    </amp-story-page>
+
+    <!-- Slide 4: Comparison -->
+    <amp-story-page id="compare">
+      <amp-story-grid-layer template="fill">
+        <div class="bg4"></div>
+      </amp-story-grid-layer>
+      <amp-story-grid-layer template="vertical" class="center" style="align-content:start; padding-top:110px;">
+        <div class="compare-head">
+          <div class="compare-title" animate-in="fade-in">Head-to-Head</div>
+          <div class="compare-sub" animate-in="fade-in" animate-in-delay="0.2s">WINNER BY CATEGORY</div>
+        </div>
+        <div class="table">
+          <div class="row win" animate-in="fly-in-left" animate-in-delay="0.3s">
+            <div class="cat">PORTRAIT<small>Hasselblad tuning</small></div>
+            <div class="badge oppo">OPPO</div>
+          </div>
+          <div class="row win sam" animate-in="fly-in-right" animate-in-delay="0.5s">
+            <div class="cat">LOW LIGHT<small>f/1.4 + AI NR</small></div>
+            <div class="badge sam">SAMSUNG</div>
+          </div>
+          <div class="row win" animate-in="fly-in-left" animate-in-delay="0.7s">
+            <div class="cat">ZOOM<small>10x vs 5x reach</small></div>
+            <div class="badge oppo">OPPO</div>
+          </div>
+          <div class="row win sam" animate-in="fly-in-right" animate-in-delay="0.9s">
+            <div class="cat">VIDEO<small>8K/60 + stability</small></div>
+            <div class="badge sam">SAMSUNG</div>
+          </div>
+        </div>
+      </amp-story-grid-layer>
+    </amp-story-page>
+
+    <!-- Slide 5: Verdict -->
+    <amp-story-page id="verdict">
+      <amp-story-grid-layer template="fill">
+        <div class="bg5"></div>
+      </amp-story-grid-layer>
+      <amp-story-grid-layer template="vertical" class="verdict-wrap">
+        <div class="verdict-eyebrow" animate-in="fade-in">Final Verdict</div>
+        <h2 class="verdict-title" animate-in="fly-in-bottom" animate-in-delay="0.2s">2-2 Draw.<br>You Choose.</h2>
+        <p class="verdict-text" animate-in="fade-in" animate-in-delay="0.4s">For <span class="highlight">photos, portraits & zoom</span>, pick Oppo. For <span class="highlight">night, video & AI</span>, Samsung wins.</p>
+        <div class="split">
+          <div class="split-box" animate-in="fly-in-left" animate-in-delay="0.6s">
+            <h3 class="oppo-accent">Team OPPO</h3>
+            <p>Dual 200MP flexibility</p>
+          </div>
+          <div class="split-box" animate-in="fly-in-right" animate-in-delay="0.6s">
+            <h3 class="samsung-accent">Team Samsung</h3>
+            <p>f/1.4 low-light beast</p>
+          </div>
+        </div>
+      </amp-story-grid-layer>
+      <amp-story-cta-layer>
+        <a href="https://example.com/full-camera-test" class="cta-button" animate-in="pulse" animate-in-delay="1s">Read full test →</a>
+      </amp-story-cta-layer>
+    </amp-story-page>
+
+  </amp-story>
+</body>
+</html>
